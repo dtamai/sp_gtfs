@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+export JSON_DIR=./data/tmp/json/
+mkdir -p $JSON_DIR
+
+shrink() {
+  input=$1
+  filename=$(basename $input .tsv)
+  name="${filename%.*}"
+  json_path=$JSON_DIR/"$name".json
+
+  $(topojson -x lat -y lon -- $input 2>/dev/null | \
+    jq -c -M "{coordinates: [.objects[].geometries[].coordinates], scale: .transform.scale, translate: .transform.translate}" > $json_path
+  )
+}
+
+export -f shrink
+find ./data/tmp/tsv -name *.tsv -print0 | xargs -0 -n1 -P8 -i bash -c 'shrink "$1"' _ {}
+
